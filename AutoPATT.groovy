@@ -883,7 +883,31 @@ if (filename == null) {
 def sessionSelector = new SessionSelector(project)
 def scroller = new JScrollPane(sessionSelector)
 JOptionPane.showMessageDialog(window, scroller, "Select Sessions", JOptionPane.INFORMATION_MESSAGE)
-	
+/* Code borrowed from https://benohead.com/blog/2012/07/18/java-make-joptionpane-dialog-resizable/
+TO MAKE JOptionPane RESIZABLE
+
+private void showDialog(Component frame, final Component component) {
+	// wrap a scrollpane around the component
+	JScrollPane scrollPane = new JScrollPane(component);
+	// make the dialog resizable
+	component.addHierarchyListener(new HierarchyListener() {
+		public void hierarchyChanged(HierarchyEvent e) {
+			Window window = SwingUtilities.getWindowAncestor(component);
+			if (window instanceof Dialog) {
+				Dialog dialog = (Dialog) window;
+				if (!dialog.isResizable()) {
+					dialog.setResizable(true);
+				}
+			}
+		}
+	});
+	// display them in a message dialog
+	JOptionPane.showMessageDialog(frame, scrollPane);
+}
+
+*/
+
+
 def sessions = sessionSelector.selectedSessions;
 if(sessions.size() == 0) return
 
