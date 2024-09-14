@@ -1176,9 +1176,10 @@ if(window instanceof ProjectWindow) {
         if (!userOpSelection) return
         else sessionOptionBool = sessionOption[userOpSelection]
 
-        // Combine records
+        // Get selected sessions
+        def sessions = frame.sessionSelector.getSelectedSessions()
+        // Option: Combine records
         if (sessionOptionBool) {
-            def sessions = frame.sessionSelector.getSelectedSessions()
             records = []
             total_count = 0
             sessions.each { sessionLoc ->
@@ -1207,10 +1208,37 @@ if(window instanceof ProjectWindow) {
             /* Run AutoPATT */
             runAutoPATT();
 
-        // Separate Records    
+        // Option: Separate Records    
         } else {
-            records = frame.sessionSelector.getSelectedRecords()
-            total_count = records.size()
+            sessions.each { sessionLoc ->
+                session = project.openSession(sessionLoc.corpus, sessionLoc.session)
+                count = session.getRecordCount()
+                total_count = count
+                println "Session: $sessionLoc \n\t $count records"
+
+                /* Add session and record information to output */
+                csv.writeNext(["Session", "Corpus", "Records"] as String[])
+                csv.writeNext(["$sessionLoc.session", "$sessionLoc.corpus", "$count"] as String[])
+                csv.writeNext("")
+
+                records = session.records
+
+                /* Allow user to choose language to analyze */
+                def langComboMap = [ "English":EnglishSpeaker, "Spanish":SpanishSpeaker]
+                userLangSelection = JOptionPane.showInputDialog(
+                null, "Choose client's language to analyze:", "Choose Language", 
+                JOptionPane.PLAIN_MESSAGE, null, langComboMap.keySet() as Object[],
+                "English")
+                if (!userLangSelection) {return}
+                else {speaker = langComboMap[userLangSelection].newInstance(records,
+                getBinding().out, csv) }
+
+                /* Run AutoPATT */
+                runAutoPATT();
+            }
+                // records = frame.sessionSelector.getSelectedRecords()
+                // total_count = records.size()
+            
         }
         }
     }
