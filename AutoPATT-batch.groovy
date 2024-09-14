@@ -1085,7 +1085,8 @@ class SessionSelectorDialog extends JDialog {
         add(header, BorderLayout.NORTH);
 
         sessionSelector = new SessionSelector(project);
-        sessionSelector.setPreferredSize(new Dimension(250, 0));
+        // Workaround large preferred size to force scroll pane
+        sessionSelector.setPreferredSize(new Dimension(2000, 5000));
         add(new JScrollPane(sessionSelector), BorderLayout.CENTER);
 
         okBtn = new JButton("Ok");
