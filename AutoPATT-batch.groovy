@@ -1054,7 +1054,7 @@ if (filename == null) {
 } 
 
 /* Allow user to select sessions for analysis */
-// Revised 2024
+// Revised 2024 //
 class SessionSelectorDialog extends JDialog {
 
     Project project;
@@ -1123,35 +1123,10 @@ if(window instanceof ProjectWindow) {
     frame.setVisible(true);
     // .. frame is modal
     if(!frame.wasCanceled) {
-        def sessions = frame.sessionSelector.getSelectedSessions()
-        records = []
-        total_count = 0
-        sessions.each { sessionLoc ->
-            session = project.openSession(sessionLoc.corpus, sessionLoc.session)
-            count = session.getRecordCount()
-            total_count += count
-            println "Session: $sessionLoc \n\t $count records"
-            
-            /* Add session and record information to output */
-            csv.writeNext(["Session", "Corpus", "Records"] as String[])
-            csv.writeNext(["$sessionLoc.session", "$sessionLoc.corpus", "$count"] as String[])
-            csv.writeNext("")
-            
-            records += session.records
-        }
 
-        /* Allow user to choose language to analyze */
-        def langComboMap = [ "English":EnglishSpeaker, "Spanish":SpanishSpeaker]
-        userSelection = JOptionPane.showInputDialog(
-        null, "Choose client's language to analyze:", "Choose Language", 
-        JOptionPane.PLAIN_MESSAGE, null, langComboMap.keySet() as Object[],
-        "English")
-        if (!userSelection) return
-        else speaker = langComboMap[userSelection].newInstance(records,
-        getBinding().out, csv)
-
+    def runAutoPATT = {
         /* Add language, version number, and date of analysis to shell output */
-        println "Language: $userSelection"
+        println "Language: $userLangSelection"
         println "AutoPATT version $AutoPATTversion"
         println "Nuber of records: $total_count"
         def date = new Date()
@@ -1164,7 +1139,7 @@ if(window instanceof ProjectWindow) {
         /* Write initial analysis header to csv output */
         csv.writeNext("AutoPATT version $AutoPATTversion")
         csv.writeNext("Language:") 
-        csv.writeNext("$userSelection")
+        csv.writeNext("$userLangSelection")
         csv.writeNext("Number of records:")
         csv.writeNext("$total_count")
         csv.writeNext("Analysis date:")
@@ -1188,7 +1163,55 @@ if(window instanceof ProjectWindow) {
         println "\nPlease see output in " + filename
         println "For more detailed information about AutoPATT and PATT, visit https://slhs.sdsu.edu/phont/the-patt/"
         csv.close();
-		out.println("AutoPATT completed ");
+        out.println("AutoPATT completed ");
+    }
+
+        /* Allow user to choose whether to combine records across sessions */
+        // Boolean boolObj = true
+        def sessionOption = ["Separate Sessions":false, "Combine Sessions":true]
+        userOpSelection = JOptionPane.showInputDialog(
+        null, "Choose whether to combine records across sessions:", "Choose Option", 
+        JOptionPane.PLAIN_MESSAGE, null, sessionOption.keySet() as Object[],
+        "Separate Sessions")
+        if (!userOpSelection) return
+        else sessionOptionBool = sessionOption[userOpSelection]
+
+        // Combine records
+        if (sessionOptionBool) {
+            def sessions = frame.sessionSelector.getSelectedSessions()
+            records = []
+            total_count = 0
+            sessions.each { sessionLoc ->
+                session = project.openSession(sessionLoc.corpus, sessionLoc.session)
+                count = session.getRecordCount()
+                total_count += count
+                println "Session: $sessionLoc \n\t $count records"
+
+                /* Add session and record information to output */
+                csv.writeNext(["Session", "Corpus", "Records"] as String[])
+                csv.writeNext(["$sessionLoc.session", "$sessionLoc.corpus", "$count"] as String[])
+                csv.writeNext("")
+
+                records += session.records
+            }
+
+            /* Allow user to choose language to analyze */
+            def langComboMap = [ "English":EnglishSpeaker, "Spanish":SpanishSpeaker]
+            userLangSelection = JOptionPane.showInputDialog(
+            null, "Choose client's language to analyze:", "Choose Language", 
+            JOptionPane.PLAIN_MESSAGE, null, langComboMap.keySet() as Object[],
+            "English")
+            if (!userLangSelection) {return}
+            else {speaker = langComboMap[userLangSelection].newInstance(records,
+            getBinding().out, csv) }
+            /* Run AutoPATT */
+            runAutoPATT();
+
+        // Separate Records    
+        } else {
+            records = frame.sessionSelector.getSelectedRecords()
+            total_count = records.size()
+        }
         }
     }
 
