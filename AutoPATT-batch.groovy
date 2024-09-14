@@ -1125,9 +1125,11 @@ if(window instanceof ProjectWindow) {
     if(!frame.wasCanceled) {
         def sessions = frame.sessionSelector.getSelectedSessions()
         records = []
+        total_count = 0
         sessions.each { sessionLoc ->
             session = project.openSession(sessionLoc.corpus, sessionLoc.session)
             count = session.getRecordCount()
+            total_count += count
             println "Session: $sessionLoc \n\t $count records"
             
             /* Add session and record information to output */
@@ -1151,6 +1153,7 @@ if(window instanceof ProjectWindow) {
         /* Add language, version number, and date of analysis to shell output */
         println "Language: $userSelection"
         println "AutoPATT version $AutoPATTversion"
+        println "Nuber of records: $total_count"
         def date = new Date()
         def sdf = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss")
         println "Analysis date: " + sdf.format(date)
@@ -1160,7 +1163,10 @@ if(window instanceof ProjectWindow) {
         println "Target selection occurs in a step-by-step fashion based on\nthe results of the individual speaker’s overall assessment\n(Barlow, Taps, & Storkel, 2010)."
         /* Write initial analysis header to csv output */
         csv.writeNext("AutoPATT version $AutoPATTversion")
-        csv.writeNext("Language: $userSelection")
+        csv.writeNext("Language:") 
+        csv.writeNext("$userSelection")
+        csv.writeNext("Number of records:")
+        csv.writeNext("$total_count")
         csv.writeNext("Analysis date:")
         csv.writeNext(sdf.format(date))
         csv.writeNext("")
@@ -1181,84 +1187,10 @@ if(window instanceof ProjectWindow) {
         csv.writeNext(speaker.outClusters as String[])
         println "\nPlease see output in " + filename
         println "For more detailed information about AutoPATT and PATT, visit https://slhs.sdsu.edu/phont/the-patt/"
-        csv.close()
-
-        // for(SessionPath sp:frame.sessionSelector.getSelectedSessions()) {
-        //     try {
-        //         Session session = window.project.openSession(sp.getCorpus(), sp.getSession());
-        //         /* Establish sessions and records for analysis */
-        //         count = session.getRecordCount()
-        //         println "Session: $session \n\t $count records"
-                
-        //         /* Add session and record information to output */
-        //         csv.writeNext(["Session", "Corpus", "Records"] as String[])
-        //         csv.writeNext(["$session", "$session", "$count"] as String[])
-        //         csv.writeNext("")
-                
-        //         records += session.records
-
-        //         /* Allow user to choose language to analyze */
-        //         def langComboMap = [ "English":EnglishSpeaker, "Spanish":SpanishSpeaker]
-        //         userSelection = JOptionPane.showInputDialog(
-        //         null, "Choose client's language to analyze:", "Choose Language", 
-        //         JOptionPane.PLAIN_MESSAGE, null, langComboMap.keySet() as Object[],
-        //         "English")
-        //         if (!userSelection) return
-        //         else speaker = langComboMap[userSelection].newInstance(records,
-        //         getBinding().out, csv)
-
-        //         /* Add language, version number, and date of analysis to shell output */
-        //         println "Language: $userSelection"
-        //         println "AutoPATT version $AutoPATTversion"
-        //         def date = new Date()
-        //         def sdf = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss")
-        //         println "Analysis date: " + sdf.format(date)
-        //         println ""
-        //         println "Phonological Assessment and Treatment Target Selection (PATT)"
-        //         println "*************************************************************"
-        //         println "Target selection occurs in a step-by-step fashion based on\nthe results of the individual speaker’s overall assessment\n(Barlow, Taps, & Storkel, 2010)."
-        //         /* Write initial analysis header to csv output */
-        //         csv.writeNext("AutoPATT version $AutoPATTversion")
-        //         csv.writeNext("Language: $userSelection")
-        //         csv.writeNext("Analysis date:")
-        //         csv.writeNext(sdf.format(date))
-        //         csv.writeNext("")
-        //         speaker.writeCSV(speaker.phoneticInv)
-        //         speaker.writeCSV(speaker.phonemicInv)
-        //         speaker.writeCSV(speaker.clusterInv)
-        //         speaker.PATT()
-        //         println "*************************************************************"
-        //         println "RECOMMENDED TREATMENT TARGET(S): " + speaker.treatmentTargets
-        //         println "Phones to monitor: " + speaker.outPhones
-        //         csv.writeNext("Phones to monitor:")
-        //         csv.writeNext(speaker.outPhones as String[] )
-        //         println "Phonemes to monitor: " + speaker.outPhonemes
-        //         csv.writeNext("Phonemes to monitor:")
-        //         csv.writeNext(speaker.outPhonemes as String[])
-        //         println "Clusters to monitor: " + speaker.outClusters
-        //         csv.writeNext("Clusters to monitor:")
-        //         csv.writeNext(speaker.outClusters as String[])
-        //         println "\nPlease see output in " + filename
-        //         println "For more detailed information about AutoPATT and PATT, visit https://slhs.sdsu.edu/phont/the-patt/"
-
-        //         //DEBUG PRINTOUT
-
-        //         csv.close()
-    
-    
-                // unblindIPATargetForSession(session);
-
-                // def writeLock = window.project.getSessionWriteLock(session);
-                // window.project.saveSession(session, writeLock);
-                // window.project.releaseSessionWriteLock(session, writeLock);
-            } catch (IOException e) {
-                out.println(e.getLocalizedMessage());
-                e.printStackTrace(out);
-            }
-			out.println("AutoPATT completed " + sp);
+        csv.close();
+		out.println("AutoPATT completed ");
         }
     }
-} 
 
 
 
