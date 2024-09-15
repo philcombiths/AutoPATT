@@ -46,6 +46,10 @@ import java.awt.Dimension
 import java.awt.event.ActionEvent
 import java.awt.event.ActionListener
 
+import java.io.*;
+import javax.swing.*;
+import java.awt.event.*;
+import javax.swing.filechooser.*;
 
 def AutoPATTversion = "0.7"
 
@@ -1051,7 +1055,7 @@ def writeCSV(File file) {
 }
     // if (!file.toLowerCase().endsWith(".csv"))
     //     file += ".csv"
-    // filename = fd.getDirectory() + filename
+    // filename = fold.getDirectory() + filename
 
 
 /* Allow user to select sessions for analysis */
@@ -1111,6 +1115,30 @@ class SessionSelectorDialog extends JDialog {
         add(buttonBar, BorderLayout.SOUTH);
     }
 
+}
+
+def selectDirectory() {
+    // Create a JFrame to act as the parent for the JFileChooser
+    JFrame frame = new JFrame()
+    frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE)
+    frame.setSize(300, 200)
+    frame.setVisible(true)
+
+    // Create a JFileChooser instance
+    JFileChooser chooser = new JFileChooser()
+    chooser.setDialogTitle("Select a directory")
+    chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY)
+
+    // Show the dialog and capture the user's selection
+    int result = chooser.showOpenDialog(frame)
+    if (result == JFileChooser.APPROVE_OPTION) {
+        File selectedDirectory = chooser.getSelectedFile()
+        println "Selected directory: ${selectedDirectory.getAbsolutePath()}"
+        return selectedDirectory
+    } else {
+        println "No directory selected"
+        return null
+    }
 }
 
 /* main() */
@@ -1219,35 +1247,40 @@ if(window instanceof ProjectWindow) {
             null, "Choose client's language to analyze:", "Choose Language", 
             JOptionPane.PLAIN_MESSAGE, null, langComboMap.keySet() as Object[],
             "English")
-            if (!userLangSelection) {return}
-            else {speaker = langComboMap[userLangSelection].newInstance(records,
-            getBinding().out, csv) }
+            if (!userLangSelection) {
+                return
+            } else {
+                speaker = langComboMap[userLangSelection].newInstance(records,
+                getBinding().out, csv)
+            }
 
             /* Run AutoPATT */
             runAutoPATT(file);
-        }
+
         // Option: Separate Records    
-        else {
-            JFileChooser fd = new JFileChooser();
-            fd.setDialogTitle("Please specify a directory to output files");
-            fd.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-            int returnValue = fd.showOpenDialog(null);
-            if (returnValue == JFileChooser.APPROVE_OPTION) {
-                File selectedDirectory = fd.getSelectedFile();
-                // do something with the selected directory
-            } else if (returnValue == JFileChooser.CANCEL_OPTION) {
-                // user cancelled the dialog
-                // System.err.println("Error: No directory selected.");
-                // System.exit(1);
-                return;
-            }
+        } else {
+            // JFileChooser fold = new JFileChooser();
+            // println "Got to Separate Records"
+            // fold.setDialogTitle("Please specify a directory to output files");
+            // fold.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+            // int returnValue = fold.showOpenDialog(null);
+            // if (returnValue == JFileChooser.APPROVE_OPTION) {
+            //     File selectedDirectory = fold.getSelectedFile();
+            //     // do something with the selected directory
+            //     println "Got to Separate Records"
             sessions.each { sessionLoc ->
-
-                /* Prepare CSV file */
-                String name = $sessionLoc.session + ".csv";
-                File file = new File(selectedDirectory, name);
+                // /* Prepare CSV file */
+                fold = new FileDialog(new Frame(), "Please specify a directory to output data", FileDialog.SAVE)
+                fold.setVisible(true)
+                dir = fold.getDirectory()
+                // filename = fold.getFile()
+                String name = sessionLoc.session + ".csv";
+                File file = new File(dir, name);
                 writeCSV(file)
+                // println "Got into sessions.each"
+                // println sessionLoc
 
+                // File selectedDirectory = selectDirectory()
 
                 session = project.openSession(sessionLoc.corpus, sessionLoc.session)
                 count = session.getRecordCount()
@@ -1274,6 +1307,12 @@ if(window instanceof ProjectWindow) {
                 /* Run AutoPATT */
                 runAutoPATT(file);
             } 
+            // } else if (returnValue == JFileChooser.CANCEL_OPTION) {
+            //     // user cancelled the dialog
+            //     // System.err.println("Error: No directory selected.");
+            //     // System.exit(1);
+            //     return;
+            // }
         }        
         }
 }
