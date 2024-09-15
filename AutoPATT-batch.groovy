@@ -1049,14 +1049,9 @@ def writeCSV(File file) {
         "AutoPATT", JOptionPane.WARNING_MESSAGE)
     return
     } else {
-
     csv = new CSVWriter(new FileWriter(file))
     }    
 }
-    // if (!file.toLowerCase().endsWith(".csv"))
-    //     file += ".csv"
-    // filename = fold.getDirectory() + filename
-
 
 /* Allow user to select sessions for analysis */
 // Revised 2024 //
@@ -1117,30 +1112,6 @@ class SessionSelectorDialog extends JDialog {
 
 }
 
-def selectDirectory() {
-    // Create a JFrame to act as the parent for the JFileChooser
-    JFrame frame = new JFrame()
-    frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE)
-    frame.setSize(300, 200)
-    frame.setVisible(true)
-
-    // Create a JFileChooser instance
-    JFileChooser chooser = new JFileChooser()
-    chooser.setDialogTitle("Select a directory")
-    chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY)
-
-    // Show the dialog and capture the user's selection
-    int result = chooser.showOpenDialog(frame)
-    if (result == JFileChooser.APPROVE_OPTION) {
-        File selectedDirectory = chooser.getSelectedFile()
-        println "Selected directory: ${selectedDirectory.getAbsolutePath()}"
-        return selectedDirectory
-    } else {
-        println "No directory selected"
-        return null
-    }
-}
-
 /* main() */
 if(window instanceof ProjectWindow) {
     SessionSelectorDialog frame = new SessionSelectorDialog(window.project, "AutoPATT", out);
@@ -1165,6 +1136,7 @@ if(window instanceof ProjectWindow) {
             println "Phonological Assessment and Treatment Target Selection (PATT)"
             println "*************************************************************"
             println "Target selection occurs in a step-by-step fashion based on\nthe results of the individual speaker’s overall assessment\n(Barlow, Taps, & Storkel, 2010)."
+            
             /* Write initial analysis header to csv output */
             csv.writeNext("AutoPATT version $AutoPATTversion")
             csv.writeNext("Language:") 
@@ -1191,12 +1163,11 @@ if(window instanceof ProjectWindow) {
             csv.writeNext(speaker.outClusters as String[])
             println "\nPlease see output in: \n\t" + file.getAbsolutePath()
             println "For more detailed information about AutoPATT and PATT, visit https://slhs.sdsu.edu/phont/the-patt/"
+            println "*************************************************************\n"
             csv.close();
-            out.println("AutoPATT completed ");
         }
         
-        /* Allow user to choose whether to combine records across sessions */
-        // Boolean boolObj = true
+        /* Allow user to choose whether session combination option */
         def sessionOption = ["Separate Sessions":false, "Combine Sessions":true]
         userOpSelection = JOptionPane.showInputDialog(
         null, "Choose whether to combine records across sessions:", "Choose Option", 
@@ -1205,10 +1176,10 @@ if(window instanceof ProjectWindow) {
         if (!userOpSelection) return
         else sessionOptionBool = sessionOption[userOpSelection]
 
-        // Get selected sessions
+        /* Get selected sessions */
         def sessions = frame.sessionSelector.getSelectedSessions()
         
-        // Option: Combine records
+        /* Option 1: Combine records */
         if (sessionOptionBool) {
             /* Prepare CSV file */
             fd = new FileDialog(new Frame(), "Please specify a CSV file to output data", FileDialog.SAVE)
@@ -1218,10 +1189,6 @@ if(window instanceof ProjectWindow) {
             if (!filename.toLowerCase().endsWith(".csv"))
                 filename += ".csv"
             File file = new File(directory, filename)
-            
-            println file.getClass().name
-            println file.getAbsolutePath()
-            // file = fd.getFile()
             writeCSV(file)
 
             /* Get records from selected sessions */
@@ -1247,6 +1214,8 @@ if(window instanceof ProjectWindow) {
             null, "Choose client's language to analyze:", "Choose Language", 
             JOptionPane.PLAIN_MESSAGE, null, langComboMap.keySet() as Object[],
             "English")
+            
+            /* Generate language-specific speaker object */
             if (!userLangSelection) {
                 return
             } else {
@@ -1257,34 +1226,31 @@ if(window instanceof ProjectWindow) {
             /* Run AutoPATT */
             runAutoPATT(file);
 
-        // Option: Separate Records    
-        } else {
-            // JFileChooser fold = new JFileChooser();
-            // println "Got to Separate Records"
-            // fold.setDialogTitle("Please specify a directory to output files");
-            // fold.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-            // int returnValue = fold.showOpenDialog(null);
-            // if (returnValue == JFileChooser.APPROVE_OPTION) {
-            //     File selectedDirectory = fold.getSelectedFile();
-            //     // do something with the selected directory
-            //     println "Got to Separate Records"
+        /* Option 2: Separate Records */
+        } else {            
+            /* User directory select */
+            fold = new FileDialog(new Frame(), "Please specify a directory to output data (filename will be ignored)", FileDialog.SAVE)
+            fold.setVisible(true)
+            dir = fold.getDirectory()
+
+            /* Allow user to choose language to analyze */
+            def langComboMap = [ "English":EnglishSpeaker, "Spanish":SpanishSpeaker]
+            userLangSelection = JOptionPane.showInputDialog(
+            null, "Choose client's language to analyze:", "Choose Language", 
+            JOptionPane.PLAIN_MESSAGE, null, langComboMap.keySet() as Object[],
+            "English")
+
             sessions.each { sessionLoc ->
-                // /* Prepare CSV file */
-                fold = new FileDialog(new Frame(), "Please specify a directory to output data", FileDialog.SAVE)
-                fold.setVisible(true)
-                dir = fold.getDirectory()
-                // filename = fold.getFile()
+                /* Prepare CSV file */
                 String name = sessionLoc.session + ".csv";
                 File file = new File(dir, name);
                 writeCSV(file)
-                // println "Got into sessions.each"
-                // println sessionLoc
-
-                // File selectedDirectory = selectDirectory()
-
+                
+                /* Get records from selected session */
                 session = project.openSession(sessionLoc.corpus, sessionLoc.session)
                 count = session.getRecordCount()
                 total_count = count
+                records = session.records
                 println "Session: $sessionLoc \n\t $count records"
 
                 /* Add session and record information to output */
@@ -1292,14 +1258,7 @@ if(window instanceof ProjectWindow) {
                 csv.writeNext(["$sessionLoc.session", "$sessionLoc.corpus", "$count"] as String[])
                 csv.writeNext("")
 
-                records = session.records
-
-                /* Allow user to choose language to analyze */
-                def langComboMap = [ "English":EnglishSpeaker, "Spanish":SpanishSpeaker]
-                userLangSelection = JOptionPane.showInputDialog(
-                null, "Choose client's language to analyze:", "Choose Language", 
-                JOptionPane.PLAIN_MESSAGE, null, langComboMap.keySet() as Object[],
-                "English")
+                /* Generate language-specific speaker object */
                 if (!userLangSelection) {return}
                 else {speaker = langComboMap[userLangSelection].newInstance(records,
                 getBinding().out, csv) }
@@ -1307,12 +1266,9 @@ if(window instanceof ProjectWindow) {
                 /* Run AutoPATT */
                 runAutoPATT(file);
             } 
-            // } else if (returnValue == JFileChooser.CANCEL_OPTION) {
-            //     // user cancelled the dialog
-            //     // System.err.println("Error: No directory selected.");
-            //     // System.exit(1);
-            //     return;
-            // }
         }        
         }
 }
+println "***************************"
+println "*** All Files Completed ***"
+println "***************************"
