@@ -6,6 +6,7 @@ import java.text.SimpleDateFormat;
 import javax.swing.JOptionPane;
 import javax.swing.JScrollPane;
 import javax.swing.JComboBox;
+import javax.swing.JFileChooser;
 //Do not import java.awt.* as this creates a type exception with List
 import java.awt.Frame;
 import java.awt.FileDialog;
@@ -1038,20 +1039,20 @@ class SpanishSpeaker extends Speaker {
 def project = window.project
 if (project == null) return
 
-/* Prepare CSV file */
-fd = new FileDialog(new Frame(), "Please specify a CSV file to output data", FileDialog.SAVE)
-fd.setVisible(true)
-filename = fd.getFile()
-if (filename == null) {
-  JOptionPane.showMessageDialog(null, "You must choose a valid file to output data",
-    "PATT", JOptionPane.WARNING_MESSAGE)
-  return
-} else {
-  if (!filename.toLowerCase().endsWith(".csv"))
-    filename += ".csv"
-  filename = fd.getDirectory() + filename
-  csv = new CSVWriter(new FileWriter(filename))
-} 
+def writeCSV(File file) {
+    if (file == null) {
+    JOptionPane.showMessageDialog(null, "You must choose a valid file to output data",
+        "AutoPATT", JOptionPane.WARNING_MESSAGE)
+    return
+    } else {
+
+    csv = new CSVWriter(new FileWriter(file))
+    }    
+}
+    // if (!file.toLowerCase().endsWith(".csv"))
+    //     file += ".csv"
+    // filename = fd.getDirectory() + filename
+
 
 /* Allow user to select sessions for analysis */
 // Revised 2024 //
@@ -1094,7 +1095,7 @@ class SessionSelectorDialog extends JDialog {
             @Override
             void actionPerformed(ActionEvent e) {
                 setVisible(false);
-            }
+            };
         })
 
         cancelBtn = new JButton("Cancel");
@@ -1103,7 +1104,7 @@ class SessionSelectorDialog extends JDialog {
             void actionPerformed(ActionEvent e) {
                 wasCanceled = true;
                 setVisible(false);
-            }
+            };
         })
 
         def buttonBar = ButtonBarBuilder.buildOkCancelBar(okBtn, cancelBtn);
@@ -1124,48 +1125,48 @@ if(window instanceof ProjectWindow) {
     // .. frame is modal
     if(!frame.wasCanceled) {
 
-    def runAutoPATT = {
-        /* Add language, version number, and date of analysis to shell output */
-        println "Language: $userLangSelection"
-        println "AutoPATT version $AutoPATTversion"
-        println "Nuber of records: $total_count"
-        def date = new Date()
-        def sdf = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss")
-        println "Analysis date: " + sdf.format(date)
-        println ""
-        println "Phonological Assessment and Treatment Target Selection (PATT)"
-        println "*************************************************************"
-        println "Target selection occurs in a step-by-step fashion based on\nthe results of the individual speaker’s overall assessment\n(Barlow, Taps, & Storkel, 2010)."
-        /* Write initial analysis header to csv output */
-        csv.writeNext("AutoPATT version $AutoPATTversion")
-        csv.writeNext("Language:") 
-        csv.writeNext("$userLangSelection")
-        csv.writeNext("Number of records:")
-        csv.writeNext("$total_count")
-        csv.writeNext("Analysis date:")
-        csv.writeNext(sdf.format(date))
-        csv.writeNext("")
-        speaker.writeCSV(speaker.phoneticInv)
-        speaker.writeCSV(speaker.phonemicInv)
-        speaker.writeCSV(speaker.clusterInv)
-        speaker.PATT()
-        println "*************************************************************"
-        println "RECOMMENDED TREATMENT TARGET(S): " + speaker.treatmentTargets
-        println "Phones to monitor: " + speaker.outPhones
-        csv.writeNext("Phones to monitor:")
-        csv.writeNext(speaker.outPhones as String[] )
-        println "Phonemes to monitor: " + speaker.outPhonemes
-        csv.writeNext("Phonemes to monitor:")
-        csv.writeNext(speaker.outPhonemes as String[])
-        println "Clusters to monitor: " + speaker.outClusters
-        csv.writeNext("Clusters to monitor:")
-        csv.writeNext(speaker.outClusters as String[])
-        println "\nPlease see output in " + filename
-        println "For more detailed information about AutoPATT and PATT, visit https://slhs.sdsu.edu/phont/the-patt/"
-        csv.close();
-        out.println("AutoPATT completed ");
-    }
-
+        def runAutoPATT = { File file ->
+            /* Add language, version number, and date of analysis to shell output */
+            println "Language: $userLangSelection"
+            println "AutoPATT version $AutoPATTversion"
+            println "Nuber of records: $total_count"
+            def date = new Date()
+            def sdf = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss")
+            println "Analysis date: " + sdf.format(date)
+            println ""
+            println "Phonological Assessment and Treatment Target Selection (PATT)"
+            println "*************************************************************"
+            println "Target selection occurs in a step-by-step fashion based on\nthe results of the individual speaker’s overall assessment\n(Barlow, Taps, & Storkel, 2010)."
+            /* Write initial analysis header to csv output */
+            csv.writeNext("AutoPATT version $AutoPATTversion")
+            csv.writeNext("Language:") 
+            csv.writeNext("$userLangSelection")
+            csv.writeNext("Number of records:")
+            csv.writeNext("$total_count")
+            csv.writeNext("Analysis date:")
+            csv.writeNext(sdf.format(date))
+            csv.writeNext("")
+            speaker.writeCSV(speaker.phoneticInv)
+            speaker.writeCSV(speaker.phonemicInv)
+            speaker.writeCSV(speaker.clusterInv)
+            speaker.PATT()
+            println "*************************************************************"
+            println "RECOMMENDED TREATMENT TARGET(S): " + speaker.treatmentTargets
+            println "Phones to monitor: " + speaker.outPhones
+            csv.writeNext("Phones to monitor:")
+            csv.writeNext(speaker.outPhones as String[] )
+            println "Phonemes to monitor: " + speaker.outPhonemes
+            csv.writeNext("Phonemes to monitor:")
+            csv.writeNext(speaker.outPhonemes as String[])
+            println "Clusters to monitor: " + speaker.outClusters
+            csv.writeNext("Clusters to monitor:")
+            csv.writeNext(speaker.outClusters as String[])
+            println "\nPlease see output in: \n\t" + file.getAbsolutePath()
+            println "For more detailed information about AutoPATT and PATT, visit https://slhs.sdsu.edu/phont/the-patt/"
+            csv.close();
+            out.println("AutoPATT completed ");
+        }
+        
         /* Allow user to choose whether to combine records across sessions */
         // Boolean boolObj = true
         def sessionOption = ["Separate Sessions":false, "Combine Sessions":true]
@@ -1178,8 +1179,24 @@ if(window instanceof ProjectWindow) {
 
         // Get selected sessions
         def sessions = frame.sessionSelector.getSelectedSessions()
+        
         // Option: Combine records
         if (sessionOptionBool) {
+            /* Prepare CSV file */
+            fd = new FileDialog(new Frame(), "Please specify a CSV file to output data", FileDialog.SAVE)
+            fd.setVisible(true)
+            directory = fd.getDirectory()
+            filename = fd.getFile()
+            if (!filename.toLowerCase().endsWith(".csv"))
+                filename += ".csv"
+            File file = new File(directory, filename)
+            
+            println file.getClass().name
+            println file.getAbsolutePath()
+            // file = fd.getFile()
+            writeCSV(file)
+
+            /* Get records from selected sessions */
             records = []
             total_count = 0
             sessions.each { sessionLoc ->
@@ -1205,12 +1222,33 @@ if(window instanceof ProjectWindow) {
             if (!userLangSelection) {return}
             else {speaker = langComboMap[userLangSelection].newInstance(records,
             getBinding().out, csv) }
-            /* Run AutoPATT */
-            runAutoPATT();
 
+            /* Run AutoPATT */
+            runAutoPATT(file);
+        }
         // Option: Separate Records    
-        } else {
+        else {
+            JFileChooser fd = new JFileChooser();
+            fd.setDialogTitle("Please specify a directory to output files");
+            fd.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+            int returnValue = fd.showOpenDialog(null);
+            if (returnValue == JFileChooser.APPROVE_OPTION) {
+                File selectedDirectory = fd.getSelectedFile();
+                // do something with the selected directory
+            } else if (returnValue == JFileChooser.CANCEL_OPTION) {
+                // user cancelled the dialog
+                // System.err.println("Error: No directory selected.");
+                // System.exit(1);
+                return;
+            }
             sessions.each { sessionLoc ->
+
+                /* Prepare CSV file */
+                String name = $sessionLoc.session + ".csv";
+                File file = new File(selectedDirectory, name);
+                writeCSV(file)
+
+
                 session = project.openSession(sessionLoc.corpus, sessionLoc.session)
                 count = session.getRecordCount()
                 total_count = count
@@ -1234,22 +1272,8 @@ if(window instanceof ProjectWindow) {
                 getBinding().out, csv) }
 
                 /* Run AutoPATT */
-                runAutoPATT();
-            }
-                // records = frame.sessionSelector.getSelectedRecords()
-                // total_count = records.size()
-            
+                runAutoPATT(file);
+            } 
+        }        
         }
-        }
-    }
-
-
-
-// def sessionSelector = new SessionSelector(project)
-// def scroller = new JScrollPane(sessionSelector)
-// JOptionPane.showMessageDialog(window, scroller, "Select Sessions", JOptionPane.INFORMATION_MESSAGE)
-
-// def main = {
-
-// }
-
+}
