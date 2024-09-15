@@ -1232,6 +1232,7 @@ if(window instanceof ProjectWindow) {
             fold = new FileDialog(new Frame(), "Please specify a directory to output data (filename will be ignored)", FileDialog.SAVE)
             fold.setVisible(true)
             dir = fold.getDirectory()
+            if (dir == null) {return}
 
             /* Allow user to choose language to analyze */
             def langComboMap = [ "English":EnglishSpeaker, "Spanish":SpanishSpeaker]
@@ -1239,6 +1240,7 @@ if(window instanceof ProjectWindow) {
             null, "Choose client's language to analyze:", "Choose Language", 
             JOptionPane.PLAIN_MESSAGE, null, langComboMap.keySet() as Object[],
             "English")
+            if (userLangSelection == null) {return} 
 
             sessions.each { sessionLoc ->
                 /* Prepare CSV file */
