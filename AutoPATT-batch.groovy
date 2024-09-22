@@ -1128,7 +1128,7 @@ if(window instanceof ProjectWindow) {
             /* Add language, version number, and date of analysis to shell output */
             println "Language: $userLangSelection"
             println "AutoPATT version $AutoPATTversion"
-            println "Nuber of records: $total_count"
+            println "Number of records: $total_count"
             def date = new Date()
             def sdf = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss")
             println "Analysis date: " + sdf.format(date)
